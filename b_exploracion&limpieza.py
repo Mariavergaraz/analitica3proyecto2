@@ -5,7 +5,7 @@ import plotly.graph_objs as go ### para gráficos
 import plotly.express as px
 import a_funciones as fn
 import matplotlib.pyplot as plt
-
+from mlxtend.preprocessing import TransactionEncoder
 
 # Ejecutar sql y conectarse a BD movies 
 conn=sql.connect('db_movies2')
@@ -17,6 +17,25 @@ cur.fetchall()
 
 # Convertir tablas de BD a DataFrames de pandas en python
 movies= pd.read_sql("""select *  from movies""", conn)
+
+#movies es DataFrame con la columna 'genres'
+
+# Convertir la columna 'genres' en una lista de listas de cadenas
+genres_list = movies['genres'].str.split('|').tolist()
+
+# Crear una instancia de TransactionEncoder
+te = TransactionEncoder()
+
+# Transformar los datos usando TransactionEncoder
+genres_encoded = te.fit_transform(genres_list)
+
+# Crear un DataFrame con los datos transformados y los nombres de las columnas
+genres_df = pd.DataFrame(genres_encoded, columns=te.columns_)
+
+# Concatenar el DataFrame original con las columnas de géneros separados
+movies = pd.concat([movies, genres_df], axis=1)
+movies.drop(columns=['genres'], inplace=True)
+
 movies_ratings = pd.read_sql('select * from ratings', conn)
 
 # Visualizar tablas
@@ -26,6 +45,16 @@ movies_ratings.head()
 #-------------------- Exploración inicial --------------------#
 # Identificar campos y verificar formatos
 movies.info()
+movies['(no genres listed)'].unique() #verificar que haya haya algunas peliculas sin categoria
+#movies['(no genres listed)'] = movies['(no genres listed)'].replace('False', '0', inplace=False)
+#movies['Action'] = movies['Action'] .replace('False', '0', inplace=False)
+#movies['Adventure'] = movies['Adventure'] .replace('False', '0', inplace=False)
+#movies['Animation'] = movies['Animation'] .replace('False', '0', inplace=False)
+#movies['Children'] = movies['Children'] .replace('False', '0', inplace=False)
+#movies['Comedy'] = movies['Comedy'] .replace('False', '0', inplace=False)
+#movies['Crime'] = movies['Crime'] .replace('False', '0', inplace=False)
+
+
 movies_ratings.info()
 
 # Verificar duplicados
@@ -48,7 +77,7 @@ cur.fetchall()
 # Número de películas
 pd.read_sql("""select count(*) from movies""", conn)
 
-# Número de calificaciones
+# Número de peliculas totales  calificadas
 pd.read_sql("""select count(*) from ratings""", conn)
 
 # Número de usuarios que calificaron
@@ -126,7 +155,7 @@ rating_movies.describe()
 # --- El 75% de las películas ha calificado 9 veces o menos ---
 # --- Sin embargo, hay películas hasta con 329 calificaciones ---
 
-#### Filtrar libros que no tengan más de 50 calificaciones
+#### Filtrar peliculas  que no tengan más de 50 calificaciones
 rating_movies2=pd.read_sql(''' select movieId, count(*) as cnt_rat
                          from df
                          group by movieId
