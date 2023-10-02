@@ -35,8 +35,7 @@ movieId = movies['movieId']
 genres_df['movieId'] = movieId
 
 #exportar generos como SQL
-conn1 = sql.connect('genres_df')
-genres_df.to_sql(name='genres', con=conn1, if_exists='replace', index=False)
+genres_df.to_sql('genres', conn, if_exists='replace', index=False)
 
 
 # Concatenar el DataFrame original con las columnas de géneros separados
@@ -62,17 +61,30 @@ genres_df.duplicated().sum()
 
 # Unión de tablas de movies y ratings
 #df = pd.read_sql("""select * from movies 
- #                left join ratings using (movieId)""", conn)
-df =pd.merge(movies, movies_ratings, on='movieId')
-df =pd.merge(df, genres_df, on='movieId')
+#                left join ratings using (movieId)""", conn)
+
+#df = pd.read_sql("""select * from df 
+#                left join genres_df using (movieId)""", conn)
+
+df1 =pd.merge(movies, movies_ratings, on='movieId')
+df =pd.merge(df1, genres_df, on='movieId')
 
 df.info()
 df.head()
 
 # Guardar en BD
-cur.execute("create table if not exists df as select * from movies left join ratings using (movieId)")
+merge = '''
+SELECT movies.*, movies_ratings.*, genres_df.*
+FROM df
+INNER JOIN movies_ratings ON movies.movieId = movies_ratings.movieId
+INNER JOIN genres_df ON movies.movieId = genres_df.movieId;
+'''
+cur.execute(merge)
 cur.execute("select name from sqlite_master where type = 'table'")
 cur.fetchall()
+#cur.execute("create table if not exists df as select * from movies left join ratings using (movieId)")
+#cur.execute("select name from sqlite_master where type = 'table'")
+#cur.fetchall()
 
 # Consultas SQL para contextualizar
 # Número de películas
@@ -100,6 +112,8 @@ pd.read_sql("""select title, count(rating) as cnt from df
             group by df.title having cnt=1 order by cnt asc """, conn)
 
 # Géneros con mayor cantidad de películas
+pd.read_sql(""" select Action, count(case when Action ='True' then 1 end) as total_accion from df
+            """, conn)
 
 # Distribución de calificaciones
 df1=pd.read_sql(""" select rating, count(*) as cnt from df
