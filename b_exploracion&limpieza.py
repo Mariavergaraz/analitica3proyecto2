@@ -17,8 +17,9 @@ cur.fetchall()
 
 # Convertir tablas de BD a DataFrames de pandas en python
 movies= pd.read_sql("""select *  from movies""", conn)
+movies_ratings = pd.read_sql('select * from ratings', conn)
 
-#movies es DataFrame con la columna 'genres'
+# Movies es DataFrame con la columna 'genres'
 
 # Convertir la columna 'genres' en una lista de listas de cadenas
 genres_list = movies['genres'].str.split('|').tolist()
@@ -34,20 +35,14 @@ genres_df = pd.DataFrame(genres_encoded, columns=te.columns_)
 movieId = movies['movieId']
 genres_df['movieId'] = movieId
 
-#exportar generos como SQL
+# Exportar generos como SQL
 genres_df.to_sql('genres', conn, if_exists='replace', index=False)
-
-
-# Concatenar el DataFrame original con las columnas de géneros separados
-#movies = pd.concat([movies, genres_df], axis=1)
-#movies.drop(columns=['genres'], inplace=True)
-
-movies_ratings = pd.read_sql('select * from ratings', conn)
 
 # Visualizar tablas
 movies.head()
 movies_ratings.head()
 genres_df.head()
+
 #-------------------- Exploración inicial --------------------#
 # Identificar campos y verificar formatos
 movies.info()
@@ -60,37 +55,22 @@ movies_ratings.duplicated().sum()
 genres_df.duplicated().sum()
 
 # Unión de tablas de movies y ratings
-#df = pd.read_sql("""select * from movies 
-#                left join ratings using (movieId)""", conn)
-
-#df = pd.read_sql("""select * from df 
-#                left join genres_df using (movieId)""", conn)
-
-df1 =pd.merge(movies, movies_ratings, on='movieId')
-df =pd.merge(df1, genres_df, on='movieId')
-
-df.info()
-df.head()
-
-# Guardar en BD
-merge = '''
-SELECT movies.*, movies_ratings.*, genres_df.*
-FROM df
-INNER JOIN movies_ratings ON movies.movieId = movies_ratings.movieId
-INNER JOIN genres_df ON movies.movieId = genres_df.movieId;
-'''
-cur.execute(merge)
+cur.execute("create table if not exists df1 as select * from movies left join ratings using (movieId)")
 cur.execute("select name from sqlite_master where type = 'table'")
 cur.fetchall()
-#cur.execute("create table if not exists df as select * from movies left join ratings using (movieId)")
-#cur.execute("select name from sqlite_master where type = 'table'")
-#cur.fetchall()
+
+# Unión de tablas de unión de df con genres
+df = pd.read_sql("""select * from df1 left join genres using (movieId)""", conn)
+df.drop('genres', axis = 1, inplace=True)
+df.to_sql('df', conn, if_exists='replace', index=False)
+cur.execute("select name from sqlite_master where type = 'table'")
+cur.fetchall()
 
 # Consultas SQL para contextualizar
 # Número de películas
 pd.read_sql("""select count(*) from movies""", conn)
 
-# Número de peliculas totales  calificadas
+# Número de calificaciones de los usuarios
 pd.read_sql("""select count(*) from ratings""", conn)
 
 # Número de usuarios que calificaron
@@ -170,7 +150,7 @@ rating_movies.describe()
 # --- El 75% de las películas ha calificado 9 veces o menos ---
 # --- Sin embargo, hay películas hasta con 329 calificaciones ---
 
-#### Filtrar peliculas  que no tengan más de 50 calificaciones
+# Filtrar peliculas  que no tengan más de 50 calificaciones
 rating_movies2=pd.read_sql(''' select movieId, count(*) as cnt_rat
                          from df
                          group by movieId
