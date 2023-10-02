@@ -31,39 +31,40 @@ genres_encoded = te.fit_transform(genres_list)
 
 # Crear un DataFrame con los datos transformados y los nombres de las columnas
 genres_df = pd.DataFrame(genres_encoded, columns=te.columns_)
+movieId = movies['movieId']
+genres_df['movieId'] = movieId
+
+#exportar generos como SQL
+conn1 = sql.connect('genres_df')
+genres_df.to_sql(name='genres', con=conn1, if_exists='replace', index=False)
+
 
 # Concatenar el DataFrame original con las columnas de géneros separados
-movies = pd.concat([movies, genres_df], axis=1)
-movies.drop(columns=['genres'], inplace=True)
+#movies = pd.concat([movies, genres_df], axis=1)
+#movies.drop(columns=['genres'], inplace=True)
 
 movies_ratings = pd.read_sql('select * from ratings', conn)
 
 # Visualizar tablas
 movies.head()
 movies_ratings.head()
-
+genres_df.head()
 #-------------------- Exploración inicial --------------------#
 # Identificar campos y verificar formatos
 movies.info()
-movies['(no genres listed)'].unique() #verificar que haya haya algunas peliculas sin categoria
-#movies['(no genres listed)'] = movies['(no genres listed)'].replace('False', '0', inplace=False)
-#movies['Action'] = movies['Action'] .replace('False', '0', inplace=False)
-#movies['Adventure'] = movies['Adventure'] .replace('False', '0', inplace=False)
-#movies['Animation'] = movies['Animation'] .replace('False', '0', inplace=False)
-#movies['Children'] = movies['Children'] .replace('False', '0', inplace=False)
-#movies['Comedy'] = movies['Comedy'] .replace('False', '0', inplace=False)
-#movies['Crime'] = movies['Crime'] .replace('False', '0', inplace=False)
-
-
 movies_ratings.info()
+genres_df.info()
 
 # Verificar duplicados
 movies.duplicated().sum() 
 movies_ratings.duplicated().sum()
+genres_df.duplicated().sum()
 
 # Unión de tablas de movies y ratings
-df = pd.read_sql("""select * from movies 
-                 left join ratings using (movieId)""", conn)
+#df = pd.read_sql("""select * from movies 
+ #                left join ratings using (movieId)""", conn)
+df =pd.merge(movies, movies_ratings, on='movieId')
+df =pd.merge(df, genres_df, on='movieId')
 
 df.info()
 df.head()
