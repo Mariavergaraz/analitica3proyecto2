@@ -91,6 +91,25 @@ pd.read_sql("""select title, count(rating) as cnt from df
 pd.read_sql("""select title, count(rating) as cnt from df
             group by df.title having cnt=1 order by cnt asc """, conn)
 
+##total de generos por pelicula 
+pd.read_sql("""select sum(case when Action =True then 1 else 0 end) as total_accion,
+                sum(case when Adventure =True then 1 else 0 end) as total_aventura,
+                sum(case when Animation =True then 1 else 0 end) as total_animacion,
+                sum(case when Children =True then 1 else 0 end) as total_infantiles,
+                sum(case when Comedy =True then 1 else 0 end) as total_comedia,
+                sum(case when Crime =True then 1 else 0 end) as total_crimen,
+                sum(case when Documentary =True then 1 else 0 end) as total_documental,
+                sum(case when Drama =True then 1 else 0 end) as total_Drama,
+                sum(case when Fantasy =True then 1 else 0 end) as total_fantasia,
+                sum(case when Horror =True then 1 else 0 end) as total_terror,
+                sum(case when IMAX =True then 1 else 0 end) as total_IMAX,
+                sum(case when Musical =True then 1 else 0 end) as total_musical,
+                sum(case when Mystery =True then 1 else 0 end) as total_misterio,
+                sum(case when Romance =True then 1 else 0 end) as total_romance,
+                sum(case when Thriller =True then 1 else 0 end) as total_thriller,
+                sum(case when War =True then 1 else 0 end) as total_guerra,
+                sum(case when Western =True then 1 else 0 end) as total_oeste
+                from df""", conn)
 # Géneros con mayor cantidad de películas
 pd.read_sql(""" select Action, count(case when Action ='True' then 1 end) as total_accion from df
             """, conn)
