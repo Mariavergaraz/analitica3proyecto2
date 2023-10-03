@@ -145,7 +145,7 @@ def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     # Agregar la columna del ID y title del pelicula a dummie para filtrar y mostrar nombre
     dfp[['movieId','title']]=movies[['movieId','title']]
-    dfp.drop('genres', axis = 1, inplace=True)
+    #dfp.drop('genres', axis = 1, inplace=True)
     
     ### filtrar peliculas calificados por el usuario
     movies_r=dfp[dfp['movieId'].isin(l_movies_r)]
