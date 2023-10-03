@@ -150,14 +150,37 @@ rating_movies.describe()
 # --- El 75% de las películas ha calificado 9 veces o menos ---
 # --- Sin embargo, hay películas hasta con 329 calificaciones ---
 
-# Filtrar peliculas  que no tengan más de 50 calificaciones
+# Filtrar peliculas que tengan más de 3 calificaciones
 rating_movies2=pd.read_sql(''' select movieId, count(*) as cnt_rat
                          from df
                          group by movieId
-                         having cnt_rat<=50
+                         having cnt_rat>3
                          order by cnt_rat desc''',conn )
 
 fig  = px.histogram(rating_movies2, x= 'cnt_rat', title= 'Número de calificaciones por película')
 fig.show()
 
 rating_movies2.describe()
+
+# Lectura de BD condensada, sin atípicos
+fn.ejecutar_sql('preprocesamiento.sql', cur)
+cur.execute("select name from sqlite_master where type='table' ")
+cur.fetchall()
+
+# ratings
+pd.read_sql('select count(*) from ratings', conn)
+pd.read_sql('select count(*) from usuarios_sel', conn)
+
+# movies
+pd.read_sql('select count(*) from movies', conn)
+pd.read_sql('select count(*) from movies_sel', conn)
+
+## Tablas finales
+pd.read_sql('select count(*) from df', conn)
+pd.read_sql('select count(*) from df_final', conn)
+
+# Verificar tamaño, duplicados, información
+ratings=pd.read_sql('select * from df_final',conn)
+ratings.duplicated().sum()
+ratings.info()
+ratings.head()
