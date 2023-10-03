@@ -53,38 +53,32 @@ pd.read_sql("""select timestamp, title,
 #---------SISTEMAS BASADOS EN CONTENIDO DE UN SOLO PRODUCTO-----------#
 #---------------------------------------------------------------------#
 
-dfp=pd.read_sql('select * from df', conn )
+# Base de datos de películas
+dfp=pd.read_sql("""select * from movies left join genres using (movieId)""", conn)
 dfp.info()
 
-# Escalar para que tiempo de duración esté en el mismo rango
-
-sc=MinMaxScaler()
-dfp[["timestamp"]]=sc.fit_transform(dfp[['timestamp']])
+# Eliminar columnas que no presentan características
+mov_dum=dfp.drop(columns=['movieId','title','genres'])
 
 
-## eliminar filas que no se van a utilizar ###
-mov_dum=dfp.drop(columns=['userId','rating','movieId','title'])
-
-
-###### libros recomendadas ejemplo para un libro#####
-
-libro='Toy Story (1995)'
-ind_libro=dfp[dfp['title']==libro].index.values.astype(int)[0]
-similar_movies=mov_dum.corrwith(mov_dum.iloc[ind_libro,:],axis=1)
+# Ejemplo de recomendación para una sola película
+pelicula='Toy Story (1995)'
+ind_pelicula=dfp[dfp['title']==pelicula].index.values.astype(int)[0]
+similar_movies=mov_dum.corrwith(mov_dum.iloc[ind_pelicula,:],axis=1)
 similar_movies=similar_movies.sort_values(ascending=False)
 top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,]
 top_similar_movies['title']=dfp["title"]
-    
+print(top_similar_movies)
 
 
-#### libros recomendados ejemplo para visualización todos los libros
+# Top 10 de recomendaciones para película seleccionada
 
 def recomendacion(pelicula = list(dfp['title'])):
      
-    ind_libro=mov_dum[dfp['title']==pelicula].index.values.astype(int)[0]   #### obtener indice de libro seleccionado de lista
-    similar_movies = mov_dum.corrwith(mov_dum.iloc[ind_libro,:],axis=1) ## correlación entre libro seleccionado y todos los otros
+    ind_pelicula=mov_dum[dfp['title']==pelicula].index.values.astype(int)[0]   #### obtener indice de pelicula seleccionado de lista
+    similar_movies = mov_dum.corrwith(mov_dum.iloc[ind_pelicula,:],axis=1) ## correlación entre pelicula seleccionado y todos los otros
     similar_movies = similar_movies.sort_values(ascending=False) #### ordenar correlaciones
-    top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,] ### el 11 es número de libros recomendados
+    top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,] ### el 11 es número de peliculas recomendados
     top_similar_movies['title']=dfp["title"] ### agregaro los nombres (como tiene mismo indice no se debe cruzar)
     
     return top_similar_movies
