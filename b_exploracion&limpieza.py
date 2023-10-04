@@ -99,7 +99,7 @@ pd.read_sql("""select title, prom_rating
 
 # Películas sin evaluaciones
 pd.read_sql("""select title, count(rating) as cnt from df_ratings
-            where df_ratings.rating is null
+            where df_ratings.rating = 0
             group by df_ratings.title 
             order by cnt asc """, conn)
 

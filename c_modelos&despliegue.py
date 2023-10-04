@@ -6,10 +6,8 @@ from ipywidgets import interact
 from sklearn import neighbors
 import joblib
 from surprise import Reader, Dataset
-from surprise.model_selection import cross_validate, GridSearchCV
+from surprise.model_selection import cross_validate, GridSearchCV, train_test_split
 from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline
-from surprise.model_selection import train_test_split
-
 
 # Conectar BD
 conn=sql.connect('db_movies2')
@@ -53,6 +51,177 @@ pd.read_sql("""select timestamp, title, prom_rating, cnt_calP as vistas
             limit 10
             """, conn)
 
+# Películas de acción mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Action
+            from df_moviesfinal
+            where Action =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de aventura mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Adventure
+            from df_moviesfinal
+            where Adventure =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de animación mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Animation
+            from df_moviesfinal
+            where Animation =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de niños mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Children
+            from df_moviesfinal
+            where Children =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de comedia mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Comedy
+            from df_moviesfinal
+            where Comedy =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de crimen mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Crime
+            from df_moviesfinal
+            where Crime =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de documentales mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Documentary
+            from df_moviesfinal
+            where Documentary =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de drama mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Drama
+            from df_moviesfinal
+            where Drama =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de fantasía mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Fantasy
+            from df_moviesfinal
+            where Fantasy =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de cine negro mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Film_noir
+            from df_moviesfinal
+            where Film_noir =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de terror mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Horror
+            from df_moviesfinal
+            where Horror =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas realistas mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, IMAX
+            from df_moviesfinal
+            where IMAX =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas tipo musical mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Musical
+            from df_moviesfinal
+            where Musical =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de misterio mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Mystery
+            from df_moviesfinal
+            where Mystery =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de romance mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Romance
+            from df_moviesfinal
+            where Romance =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de ficción mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Fiction
+            from df_moviesfinal
+            where Fiction =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de suspenso mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Thriller
+            from df_moviesfinal
+            where Thriller =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas de guerra mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, War
+            from df_moviesfinal
+            where War =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
+# Películas del oeste mejor calificadas
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas, Western
+            from df_moviesfinal
+            where Western =True
+            group by title
+            order by prom_rating desc
+            limit 10
+            """, conn)
+
 #---------------------------------------------------------------------#
 #---------SISTEMAS BASADOS EN CONTENIDO DE UN SOLO PRODUCTO-----------#
 #---------------------------------------------------------------------#
@@ -63,7 +232,6 @@ movies.info()
 # Eliminar columnas que no presentan características
 mov_dum=movies.drop(columns=['movieId','title','userId','rating','timestamp', 'prom_rating','cnt_calP','cnt_calU'])
 
-
 # Ejemplo de recomendación para una sola película
 pelicula='Black Panther (2017)'
 ind_pelicula=movies[movies['title']==pelicula].index.values.astype(int)[0]
@@ -72,7 +240,6 @@ similar_movies=similar_movies.sort_values(ascending=False)
 top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,]
 top_similar_movies['title']=movies["title"]
 print(top_similar_movies)
-
 
 # Top 10 de recomendaciones para película seleccionada
 def recomendacion(pelicula = list(movies['title'])):
@@ -84,7 +251,6 @@ def recomendacion(pelicula = list(movies['title'])):
     top_similar_movies['title']=movies["title"] ### agregaro los nombres (como tiene mismo indice no se debe cruzar)
     
     return top_similar_movies
-
 
 print(interact(recomendacion))
 
@@ -164,7 +330,7 @@ def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     ids=idlist[0] ### queda en un array anidado, para sacarlo
     recomend_b=movies.loc[ids][['movieId','title']]
-    leidos=movies[movies['movieId'].isin(l_movies_r)][['movieId','title']]
+    vistos=movies[movies['movieId'].isin(l_movies_r)][['movieId','title']]
     
     return recomend_b
 
@@ -185,17 +351,16 @@ reader = Reader(rating_scale=(0, 5))
 # Columnas en orden estándar
 data = Dataset.load_from_df(ratings[['userId','title','rating']], reader)
 
-#####Existen varios modelos 
+# Definición de modelos
 models=[KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
 results = {}
 
-###knnBasiscs: calcula el rating ponderando por distancia con usuario/Items
-###KnnWith means: en la ponderación se resta la media del rating, y al final se suma la media general
-####KnnwithZscores: estandariza el rating restando media y dividiendo por desviación 
-####Knnbaseline: calculan el desvío de cada calificación con respecto al promedio y con base en esos calculan la ponderación
+# KNNBasiscs: calcula el rating ponderando por distancia con usuario/Items
+# KNNWith means: en la ponderación se resta la media del rating, y al final se suma la media general
+# KNNwithZscores: estandariza el rating restando media y dividiendo por desviación 
+# KNNbaseline: calculan el desvío de cada calificación con respecto al promedio y con base en esos calculan la ponderación
 
-
-#### función para probar varios modelos ##########
+# Verificación de modelos con Cross Validation
 model=models[1]
 for model in models:
  
@@ -205,53 +370,50 @@ for model in models:
              rename({'test_mae':'MAE', 'test_rmse': 'RMSE'})
     results[str(model).split("algorithms.")[1].split("object ")[0]] = result
 
-
+# Desempeño de los modelos - Métrica RMSE interpretable
 performance_df = pd.DataFrame.from_dict(results).T
 performance_df.sort_values(by='RMSE')
 
-###################se escoge el mejor knn withmeans#########################
+# Selección del mejor KNN con withmeans
 param_grid = { 'sim_options' : {'name': ['msd','cosine'], \
                                 'min_support': [5], \
                                 'user_based': [False, True]}
              }
 
-### se afina si es basado en usuario o basado en ítem
-
+# Afinamiento
 gridsearchKNNWithMeans = GridSearchCV(KNNWithMeans, param_grid, measures=['rmse'], \
                                       cv=2, n_jobs=2)
                                     
 gridsearchKNNWithMeans.fit(data)
 
-
 gridsearchKNNWithMeans.best_params["rmse"]
 gridsearchKNNWithMeans.best_score["rmse"]
 gs_model=gridsearchKNNWithMeans.best_estimator['rmse'] ### mejor estimador de gridsearch
 
+# Entrenar con todos los datos y realizar predicciones con el modelo afinado
+trainset = data.build_full_trainset()
+model=gs_model.fit(trainset)
 
-################# Entrenar con todos los datos y Realizar predicciones con el modelo afinado
-
-trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento, las funciones anteriores dividen  en entrenamiento y evaluación
-model=gs_model.fit(trainset) ## se reentrena sobre todos los datos posibles (sin dividir)
-
-predset = trainset.build_anti_testset() ### crea una tabla con todos los usuarios y los libros que no han leido
-#### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
+# Tabla con todos los usuarios y películas que no han visto
+predset = trainset.build_anti_testset()
+# Promedio de todos los rating en caso de que no pueda calcularlo para un item-usuario
 len(predset)
 
-predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos las peliculas no vista
-### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
+# Predicciones de rating para todos las peliculas no vista
+predictions = gs_model.test(predset)
 
-predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
+# Base donde se encuentran todas las predicciones
+predictions_df = pd.DataFrame(predictions)
 predictions_df.shape
 predictions_df.head()
-predictions_df['r_ui'].unique()### promedio de ratings
+predictions_df['r_ui'].unique()
 print(len(predictions_df['uid'].unique()))
 predictions_df.sort_values(by='est',ascending=False)
 
-####### la predicción se puede hacer para un libro puntual
-model.predict(uid=62, iid='I.Q. (1994)',r_ui='') ### uid debía estar en número e iib en comillas
+# Predicción para un usuario y una película puntual
+model.predict(uid=62, iid='I.Q. (1994)',r_ui='') 
 
-
-##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
+# Recomendar las 10 películas con mejores predicciones
 def recomendaciones(user_id,n_recomend=10):
     
     predictions_userID = predictions_df[predictions_df['uid'] == user_id].\
@@ -265,7 +427,5 @@ def recomendaciones(user_id,n_recomend=10):
                              on a.iid=b.title ''', conn)
 
     return(recomendados)
-
-
  
 recomendaciones(user_id=62,n_recomend=10)
