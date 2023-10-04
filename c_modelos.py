@@ -22,68 +22,66 @@ cur.fetchall()
 #---------------------------------------------------------------------#
 
 # Películas mejores calificadas
-pd.read_sql("""select title, 
-            avg(rating) as avg_rat,
-            count(*) as see_num
-            from df
-            where rating<>0
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas
+            from df_moviesfinal
             group by title
-            order by avg_rat desc
+            order by prom_rating desc
             limit 10
             """, conn)
 
 # Películas más vistas con promedio de calificación
-pd.read_sql("""select title, 
-            avg(iif(rating = 0, Null, rating)) as avg_rat,
-            count(*) as see_num
-            from df
+pd.read_sql("""select title, prom_rating, cnt_calP as vistas
+            from df_moviesfinal
             group by title
-            order by see_num desc
+            order by vistas desc
             limit 10
             """, conn)
 
+# Películas cortas mejor calificadas
+pd.read_sql("""select timestamp, title, prom_rating, cnt_calP as vistas
+            from df_moviesfinal
+            group by  timestamp
+            order by timestamp asc
+            limit 10
+            """, conn)
 
-# Películas mejores calificadas por tiempo de duración
-pd.read_sql("""select timestamp, title, 
-            avg(iif(rating = 0, Null, rating)) as avg_rat,
-            count(iif(rating = 0, Null, rating)) as rat_numb,
-            count(*) as see_num
-            from df
-            group by  timestamp, title
-            order by timestamp desc, avg_rat desc 
+# Películas largas mejor calificadas
+pd.read_sql("""select timestamp, title, prom_rating, cnt_calP as vistas
+            from df_moviesfinal
+            group by  timestamp
+            order by timestamp desc
             limit 10
             """, conn)
 
 #---------------------------------------------------------------------#
 #---------SISTEMAS BASADOS EN CONTENIDO DE UN SOLO PRODUCTO-----------#
 #---------------------------------------------------------------------#
-
 # Base de datos de películas
-dfp=pd.read_sql("""select * from movies left join genres using (movieId)""", conn)
-dfp.info()
+movies=pd.read_sql("""select * from df_moviesfinal""", conn)
+movies.info()
 
 # Eliminar columnas que no presentan características
-mov_dum=dfp.drop(columns=['movieId','title','genres'])
+mov_dum=movies.drop(columns=['movieId','title','userId','rating','timestamp', 'prom_rating','cnt_calP','cnt_calU'])
 
 
 # Ejemplo de recomendación para una sola película
-pelicula='Toy Story (1995)'
-ind_pelicula=dfp[dfp['title']==pelicula].index.values.astype(int)[0]
+pelicula='Black Panther (2017)'
+ind_pelicula=movies[movies['title']==pelicula].index.values.astype(int)[0]
 similar_movies=mov_dum.corrwith(mov_dum.iloc[ind_pelicula,:],axis=1)
 similar_movies=similar_movies.sort_values(ascending=False)
 top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,]
-top_similar_movies['title']=dfp["title"]
+top_similar_movies['title']=movies["title"]
 print(top_similar_movies)
 
 
 # Top 10 de recomendaciones para película seleccionada
-def recomendacion(pelicula = list(dfp['title'])):
+def recomendacion(pelicula = list(movies['title'])):
      
-    ind_pelicula=mov_dum[dfp['title']==pelicula].index.values.astype(int)[0]   #### obtener indice de pelicula seleccionado de lista
+    ind_pelicula=mov_dum[movies['title']==pelicula].index.values.astype(int)[0]   #### obtener indice de pelicula seleccionado de lista
     similar_movies = mov_dum.corrwith(mov_dum.iloc[ind_pelicula,:],axis=1) ## correlación entre pelicula seleccionado y todos los otros
     similar_movies = similar_movies.sort_values(ascending=False) #### ordenar correlaciones
     top_similar_movies=similar_movies.to_frame(name="correlación").iloc[0:11,] ### el 11 es número de peliculas recomendados
-    top_similar_movies['title']=dfp["title"] ### agregaro los nombres (como tiene mismo indice no se debe cruzar)
+    top_similar_movies['title']=movies["title"] ### agregaro los nombres (como tiene mismo indice no se debe cruzar)
     
     return top_similar_movies
 
@@ -95,7 +93,6 @@ print(interact(recomendacion))
 #---------------------------------------------------------------------#
 
 # Entrenamiento del modelo
-
 # Similitud entre componentes basado en el coseno
 model = neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
 model.fit(mov_dum)
@@ -107,20 +104,20 @@ id_list=pd.DataFrame(idlist) ## para saber esas distancias a que item correspond
 # Ejemplo de recomendación para una sola película
 movie_list_name = []
 movie_name='Toy Story (1995)'
-movie_id = dfp[dfp['title'] == movie_name].index ### extraer el indice del pelicula
-movie_id = movie_id[0] ## si encuentra varios solo guarde uno
+movie_id = movies[movies['title'] == movie_name].index ### Extraer el nombre del pelicula
+movie_id = movie_id[0] ## Si encuentra varios solo guarde uno
 
 for newid in idlist[movie_id]:
-        movie_list_name.append(dfp.loc[newid].title) ### agrega el nombre de cada una de los id recomendados
+        movie_list_name.append(movies.loc[newid].title) ### Agrega el nombre de cada una de las películas recomendadas
 
 movie_list_name
 
-def movieRecommender(movie_name = list(dfp['title'].value_counts().index)):
+def movieRecommender(movie_name = list(movies['title'].value_counts().index)):
     movie_list_name = []
-    movie_id = dfp[dfp['title'] == movie_name].index
+    movie_id = movies[movies['title'] == movie_name].index
     movie_id = movie_id[0]
     for newid in idlist[movie_id]:
-        movie_list_name.append(dfp.loc[newid].title)
+        movie_list_name.append(movies.loc[newid].title)
     return movie_list_name
 
 print(interact(movieRecommender))
@@ -128,39 +125,37 @@ print(interact(movieRecommender))
 #---------------------------------------------------------------------#
 #------SISTEMAS BASADOS EN CONTENIDO KNN DE TODOS LOS PRODUCTOS-------#
 #---------------------------------------------------------------------#
-movies=pd.read_sql('select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId)', conn )
+movies=pd.read_sql('select * from df_moviesfinal', conn )
 
 # Seleccionar usuario para recomendaciones
-usuarios=pd.read_sql('select distinct userId from (select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId))',conn)
+usuarios=pd.read_sql('select distinct userId from df_ratingsfinal',conn)
 
-user_id = 610 ### para ejemplo manual
+user_id = 62 ### para ejemplo manual
 
 def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     # Seleccionar solo los ratings del usuario seleccionado
-    ratings=pd.read_sql('select * from (select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId)) where userId=:user',conn, params={'user':user_id})
+    ratings=pd.read_sql('select * from df_ratingsfinal where userId=:user',conn, params={'user':user_id})
     
     # convertir ratings del usuario a array
     l_movies_r=ratings['rating'].to_numpy()
     
-    # Agregar la columna del ID y title del pelicula a dummie para filtrar y mostrar nombre
-    dfp[['movieId','title']]=movies[['movieId','title']]
-    #dfp.drop('genres', axis = 1, inplace=True)
+    # Agregar la columna del movieId y title del pelicula a dummie para filtrar y mostrar nombre
+    mov_dum[['movieId','title']]=movies[['movieId','title']]
     
     ### filtrar peliculas calificados por el usuario
     movies_r=movies[movies['movieId'].isin(l_movies_r)]
     
-    ## eliminar columna nombre e isbn
-    movies_r=movies_r.drop(columns=['movieId','title'])
+    ## Eliminar columnas movieId y title
+    movies_r=movies_r.drop(columns=['movieId','title', 'userId', 'rating', 'timestamp', 'prom_rating','cnt_calP', 'cnt_calU'])
     movies_r["indice"]=1 ### para usar group by y que quede en formato pandas tabla de centroide
     ##centroide o perfil del usuario
     centroide=movies_r.groupby("indice").mean()
-    
-    
+        
     ### filtrar peliculas no leídos
-    movies_nr=[~dfp['movieId'].isin(l_movies_r)]
+    movies_nr=mov_dum[~mov_dum['movieId'].isin(l_movies_r)]
     ## eliminbar nombre e isbn
-    movies_nr=movies_nr.drop(columns=['movieId','title', 'genres'])
+    movies_nr=movies_nr.drop(columns=['movieId','title'])
     
     ### entrenar modelo 
     model=neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
@@ -173,7 +168,7 @@ def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     return recomend_b
 
-recomendar(15)
+recomendar(62)
 
 print(interact(recomendar))
 
@@ -182,15 +177,13 @@ print(interact(recomendar))
 #---------------------------------------------------------------------#
 
 # Selección de calificaciones explicitas
-ratings=pd.read_sql('select * from df where rating>0', conn)
-
+ratings=pd.read_sql('select * from df_ratingsfinal', conn)
 
 # Escala de calificación
 reader = Reader(rating_scale=(0, 5)) 
 
 # Columnas en orden estándar
 data = Dataset.load_from_df(ratings[['userId','title','rating']], reader)
-
 
 #####Existen varios modelos 
 models=[KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
