@@ -237,17 +237,18 @@ predset = trainset.build_anti_testset() ### crea una tabla con todos los usuario
 #### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
 len(predset)
 
-predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
+predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos las peliculas no vista
 ### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
 
 predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
 predictions_df.shape
 predictions_df.head()
-predictions_df['r_ui'].unique() ### promedio de ratings
+predictions_df['r_ui'].unique()### promedio de ratings
+print(len(predictions_df['uid'].unique()))
 predictions_df.sort_values(by='est',ascending=False)
 
 ####### la predicción se puede hacer para un libro puntual
-model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
+model.predict(uid=62, iid='I.Q. (1994)',r_ui='') ### uid debía estar en número e iib en comillas
 
 
 ##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
@@ -259,12 +260,12 @@ def recomendaciones(user_id,n_recomend=10):
     recomendados = predictions_userID[['iid','est']]
     recomendados.to_sql('reco',conn,if_exists="replace")
     
-    recomendados=pd.read_sql('''select a.*, b.book_title 
-                             from reco a left join books_final b
-                             on a.iid=b.isbn ''', conn)
+    recomendados=pd.read_sql('''select a.*, b.title 
+                             from reco a left join df_moviesfinal b
+                             on a.iid=b.title ''', conn)
 
     return(recomendados)
 
 
  
-recomendaciones(user_id=179733,n_recomend=10)
+recomendaciones(user_id=62,n_recomend=10)
