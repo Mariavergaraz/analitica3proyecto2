@@ -128,17 +128,17 @@ print(interact(movieRecommender))
 #---------------------------------------------------------------------#
 #------SISTEMAS BASADOS EN CONTENIDO KNN DE TODOS LOS PRODUCTOS-------#
 #---------------------------------------------------------------------#
-movies=pd.read_sql('select * from df', conn )
+movies=pd.read_sql('select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId)', conn )
 
 # Seleccionar usuario para recomendaciones
-usuarios=pd.read_sql('select distinct userId from df',conn)
+usuarios=pd.read_sql('select distinct userId from (select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId))',conn)
 
-user_id = 15 ### para ejemplo manual
+user_id = 610 ### para ejemplo manual
 
 def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     # Seleccionar solo los ratings del usuario seleccionado
-    ratings=pd.read_sql('select * from ratings where userId=:user',conn, params={'user':user_id})
+    ratings=pd.read_sql('select * from (select * from movies left join (select *, avg(rating) as prom_rating from ratings group by movieId) using (movieId)) where userId=:user',conn, params={'user':user_id})
     
     # convertir ratings del usuario a array
     l_movies_r=ratings['rating'].to_numpy()
@@ -148,7 +148,7 @@ def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     #dfp.drop('genres', axis = 1, inplace=True)
     
     ### filtrar peliculas calificados por el usuario
-    movies_r=dfp[dfp['movieId'].isin(l_movies_r)]
+    movies_r=movies[movies['movieId'].isin(l_movies_r)]
     
     ## eliminar columna nombre e isbn
     movies_r=movies_r.drop(columns=['movieId','title'])
@@ -158,9 +158,9 @@ def recomendar(user_id=list(usuarios['userId'].value_counts().index)):
     
     
     ### filtrar peliculas no leídos
-    movies_nr=dfp[~dfp['movieId'].isin(l_movies_r)]
+    movies_nr=[~dfp['movieId'].isin(l_movies_r)]
     ## eliminbar nombre e isbn
-    movies_nr=movies_nr.drop(columns=['movieId','title'])
+    movies_nr=movies_nr.drop(columns=['movieId','title', 'genres'])
     
     ### entrenar modelo 
     model=neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
